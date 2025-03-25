@@ -1,0 +1,26 @@
+{
+  "lecturer1": {
+    "password": "lecpass1",
+    "unique_id": "lecturer1",
+    "name": "Lusimbo",
+    "email": "lusimbo@university.edu"
+  },
+  "lecturer2": {
+    "password": "lecpass2",
+    "unique_id": "lecturer2",
+    "name": "Jane Doe",
+    "email": "doe@university.edu"
+  },
+  "lecturer3": {
+    "password": "lecpass3",
+    "unique_id": "lecturer3",
+    "name": "Michael Brown",
+    "email": "brown@university.edu"
+  },
+  "Bem": {
+    "password": "bem21",
+    "unique_id": "Bem",
+    "name": "Dr. Bem",
+    "email": "bem@university.edu"
+  }
+}

@@ -1,0 +1,282 @@
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Student Dashboard - Smart Attendance Monitoring System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <style>
+   .dark-theme {
+     --bg-color: #1f2937;
+     --text-color: #f3f4f6;
+     --card-bg: #374151;
+     --shadow-color: rgba(0, 0, 0, 0.2);
+     --border-color: #4b5563;
+   }
+   body {
+     background-color: var(--bg-color, #f3f4f6);
+     color: var(--text-color, #1f2937);
+     transition: all 0.3s ease;
+     font-family: 'Roboto', sans-serif;
+   }
+   header, footer, section {
+     background-color: var(--card-bg, #ffffff);
+     box-shadow: 0 1px 3px var(--shadow-color, rgba(0, 0, 0, 0.1));
+   }
+   .dark-theme .border-b {
+     border-color: var(--border-color);
+   }
+   #notification-panel {
+     display: none;
+     position: fixed;
+     top: 60px;
+     right: 20px;
+     width: 300px;
+     background-color: #ffffff;
+     border: 1px solid #ddd;
+     border-radius: 5px;
+     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+     z-index: 1000;
+   }
+   .dark-theme #notification-panel {
+     background-color: #374151;
+     border-color: #4b5563;
+   }
+  </style>
+ </head>
+ <body>
+  <div class="min-h-screen flex flex-col">
+   <header class="py-4">
+    <div class="container mx-auto flex justify-between items-center px-4">
+     <h1 class="text-2xl font-bold">Smart Attendance Monitoring System</h1>
+     <div class="flex items-center space-x-4">
+      <button id="theme-toggle" class="text-2xl">
+       <i class="fas fa-sun"></i>
+      </button>
+      <div class="relative">
+       <button id="notification-toggle" class="text-2xl">
+        <i class="fas fa-bell"></i>
+        {% if unread_count > 0 %}
+          <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{{ unread_count }}</span>
+        {% endif %}
+       </button>
+       <div id="notification-panel">
+        <div class="p-4">
+         <h3 class="text-lg font-bold mb-2">Notifications</h3>
+         <div id="notification-list">
+          {% for notif in notifications %}
+            <div class="p-2 border-b {% if not notif.read %}bg-yellow-100{% endif %}">
+             <p>{{ notif.message }}</p>
+             <p class="text-sm text-gray-500">{{ notif.timestamp }}</p>
+            </div>
+          {% endfor %}
+         </div>
+         <form action="{{ url_for('mark_notifications_read') }}" method="POST" class="mt-2">
+          <button type="submit" class="bg-blue-500 text-white px-2 py-1 rounded-md w-full">Mark All Read</button>
+         </form>
+        </div>
+       </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="bg-blue-500 text-white px-4 py-2 rounded-md">Logout</a>
+     </div>
+    </div>
+   </header>
+   <main class="flex-grow container mx-auto px-4 py-6">
+    <section class="rounded-md p-6 mb-6">
+     <div class="flex items-center">
+      <img alt="Profile picture of the student" class="w-24 h-24 rounded-full mr-4" src="https://placehold.co/100x100"/>
+      <div>
+       <h2 class="text-2xl font-bold">Welcome, {{ student_name }}!</h2>
+       <p class="text-gray-600 dark:text-gray-400">Registration Number: {{ reg_number }}</p>
+       <p class="text-gray-600 dark:text-gray-400">Course/Session: {{ course }}</p>
+      </div>
+     </div>
+    </section>
+    <section class="rounded-md p-6 mb-6">
+     <h3 class="text-xl font-bold mb-4">Mark Attendance</h3>
+     <form action="{{ url_for('attendance') }}" method="POST" class="flex flex-col md:flex-row items-center">
+      <input name="attendance_code" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-2 mb-4 md:mb-0 md:mr-4 flex-grow" placeholder="Enter Attendance Code" type="text" required/>
+      <input name="latitude" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-2 mb-4 md:mb-0 md:mr-4" placeholder="Your Latitude" type="number" step="any" required/>
+      <input name="longitude" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-2 mb-4 md:mb-0 md:mr-4" placeholder="Your Longitude" type="number" step="any" required/>
+      <input name="device_id" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-2 mb-4 md:mb-0 md:mr-4" placeholder="Device ID" type="text" required/>
+      <input name="identity_score" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-2 mb-4 md:mb-0 md:mr-4" placeholder="Identity Score (0.0-1.0)" type="number" step="0.01" min="0" max="1" required/>
+      <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-md">Submit</button>
+     </form>
+     <div class="mt-4">
+      <p class="text-gray-600 dark:text-gray-400">GPS Location Check 📍 (Must match lecturer's location)</p>
+      <p class="text-gray-600 dark:text-gray-400">Device Check 📱 (Unique device required)</p>
+      <p class="text-gray-600 dark:text-gray-400">Identity Check 🔑 (Score ≥ 0.9)</p>
+     </div>
+     <div class="mt-4" id="flash-messages">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <p class="{% if 'declined' in message.lower() %}text-red-500{% else %}text-green-500{% endif %}">{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+     </div>
+    </section>
+    <section class="rounded-md p-6 mb-6">
+     <h3 class="text-xl font-bold mb-4">Update Current Location</h3>
+     <form action="{{ url_for('student_dashboard') }}" method="POST" class="flex flex-col md:flex-row items-center">
+      <input name="latitude" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-2 mb-4 md:mb-0 md:mr-4" placeholder="New Latitude" type="number" step="any" required/>
+      <input name="longitude" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-2 mb-4 md:mb-0 md:mr-4" placeholder="New Longitude" type="number" step="any" required/>
+      <button name="update_location" type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Update Location</button>
+     </form>
+     <div class="mt-4">
+      <p>Current Status: <span id="current-status">Not Marked</span></p>
+      <p>Sign-in Location: <span id="sign-in-location">N/A</span></p>
+      <p>Current Location: <span id="current-location">N/A</span></p>
+      <p>Location Check: <span id="location-check">N/A</span></p>
+     </div>
+    </section>
+    <section class="rounded-md p-6 mb-6" id="notification-section">
+     {% if active_notification %}
+     <div class="bg-yellow-100 p-4 rounded-md">
+      <h3 class="text-xl font-bold mb-4">Live Check-In Request</h3>
+      <p class="text-gray-700">Are you still in class? Please respond within 5 minutes.</p>
+      <form action="{{ url_for('respond_check_in', notification_id=active_notification) }}" method="POST" class="mt-4">
+       <button type="submit" name="response" value="yes" class="bg-green-500 text-white px-4 py-2 rounded-md mr-4">Yes</button>
+       <button type="submit" name="response" value="no" class="bg-red-500 text-white px-4 py-2 rounded-md">No</button>
+      </form>
+     </div>
+     {% endif %}
+    </section>
+    <section class="rounded-md p-6 mb-6">
+     <h3 class="text-xl font-bold mb-4">Attendance History</h3>
+     <div class="overflow-x-auto">
+      <table class="min-w-full">
+       <thead>
+        <tr>
+         <th class="py-2 px-4 border-b">Date</th>
+         <th class="py-2 px-4 border-b">Course</th>
+         <th class="py-2 px-4 border-b">Session</th>
+         <th class="py-2 px-4 border-b">Status</th>
+        </tr>
+       </thead>
+       <tbody id="attendance-history">
+        {{ attendance_history | safe }}
+       </tbody>
+      </table>
+     </div>
+     <div class="mt-4 flex justify-between">
+      <input class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-2 flex-grow mr-4" placeholder="Search by date, subject, or lecturer" type="text"/>
+      <button class="bg-blue-500 text-white px-4 py-2 rounded-md">Download Report</button>
+     </div>
+    </section>
+    <section class="rounded-md p-6 mb-6">
+     <h3 class="text-xl font-bold mb-4">Active Session Check-in</h3>
+     <p class="text-gray-600 dark:text-gray-400">Random GPS re-check to verify ongoing attendance.</p>
+     <p class="text-gray-600 dark:text-gray-400">If prompted, the system sends a notification (via SMS & App):</p>
+     <p class="text-gray-600 dark:text-gray-400">"Are you still in class?" with a Yes/No response required within 5 minutes.</p>
+     <p class="text-gray-600 dark:text-gray-400">If the student fails to respond, they may be marked as Left Early.</p>
+    </section>
+    <section class="rounded-md p-6 mb-6">
+     <h3 class="text-xl font-bold mb-4">Settings & Profile Management</h3>
+     <div class="flex flex-col md:flex-row items-center">
+      <button class="bg-blue-500 text-white px-4 py-2 rounded-md mb-4 md:mb-0 md:mr-4">Update Profile</button>
+      <button class="bg-blue-500 text-white px-4 py-2 rounded-md mb-4 md:mb-0 md:mr-4">Change Password</button>
+      <button class="bg-blue-500 text-white px-4 py-2 rounded-md">Set Notification Preferences</button>
+     </div>
+    </section>
+   </main>
+   <footer class="py-4">
+    <div class="container mx-auto text-center">
+     <p class="text-gray-600 dark:text-gray-400">© 2025 Smart Attendance Monitoring System. All rights reserved.</p>
+    </div>
+   </footer>
+  </div>
+  <script>
+   const themeToggle = document.getElementById('theme-toggle');
+   const body = document.body;
+   const icon = themeToggle.querySelector('i');
+   if (localStorage.getItem('theme') === 'dark') {
+     body.classList.add('dark-theme');
+     icon.classList.replace('fa-sun', 'fa-moon');
+   }
+   themeToggle.addEventListener('click', () => {
+     body.classList.toggle('dark-theme');
+     if (body.classList.contains('dark-theme')) {
+       icon.classList.replace('fa-sun', 'fa-moon');
+       localStorage.setItem('theme', 'dark');
+     } else {
+       icon.classList.replace('fa-moon', 'fa-sun');
+       localStorage.setItem('theme', 'light');
+     }
+   });
+
+   // Notification panel toggle
+   const notificationToggle = document.getElementById('notification-toggle');
+   const notificationPanel = document.getElementById('notification-panel');
+   notificationToggle.addEventListener('click', () => {
+     notificationPanel.style.display = notificationPanel.style.display === 'block' ? 'none' : 'block';
+   });
+
+   // Real-time student status updates
+   function updateStudentStatus() {
+     fetch('/student_status')
+       .then(response => response.json())
+       .then(data => {
+         if (data.error) {
+           console.error('Error fetching student status:', data.error);
+           return;
+         }
+         document.getElementById('current-status').textContent = data.status;
+         document.getElementById('current-location').textContent = data.current_location;
+         document.getElementById('location-check').textContent = data.location_check;
+
+         // Update sign-in location
+         const record = data.attendance_records ? data.attendance_records.find(r => r.id === '{{ session['user'] }}') : null;
+         document.getElementById('sign-in-location').textContent = record ? record.location : 'N/A';
+
+         const notificationSection = document.getElementById('notification-section');
+         if (data.active_notification) {
+           notificationSection.innerHTML = `
+             <div class="bg-yellow-100 p-4 rounded-md">
+               <h3 class="text-xl font-bold mb-4">Live Check-In Request</h3>
+               <p class="text-gray-700">Are you still in class? Please respond within 5 minutes.</p>
+               <form action="/respond_check_in/${data.active_notification}" method="POST" class="mt-4">
+                 <button type="submit" name="response" value="yes" class="bg-green-500 text-white px-4 py-2 rounded-md mr-4">Yes</button>
+                 <button type="submit" name="response" value="no" class="bg-red-500 text-white px-4 py-2 rounded-md">No</button>
+               </form>
+             </div>
+           `;
+         } else {
+           notificationSection.innerHTML = '';
+         }
+
+         // Update notification list
+         const notificationList = document.getElementById('notification-list');
+         notificationList.innerHTML = '';
+         data.notifications.forEach(notif => {
+           notificationList.innerHTML += `
+             <div class="p-2 border-b ${!notif.read ? 'bg-yellow-100' : ''}">
+               <p>${notif.message}</p>
+               <p class="text-sm text-gray-500">${notif.timestamp}</p>
+             </div>
+           `;
+         });
+
+         // Update unread count
+         const unreadBadge = document.querySelector('#notification-toggle .bg-red-500');
+         if (data.unread_count > 0) {
+           if (!unreadBadge) {
+             notificationToggle.innerHTML += `<span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">${data.unread_count}</span>`;
+           } else {
+             unreadBadge.textContent = data.unread_count;
+           }
+         } else if (unreadBadge) {
+           unreadBadge.remove();
+         }
+       })
+       .catch(error => console.error('Error:', error));
+   }
+
+   // Poll every 5 seconds
+   setInterval(updateStudentStatus, 5000);
+   updateStudentStatus(); // Initial call
+  </script>
+ </body>
+</html>

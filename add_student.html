@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Add Student</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .error { color: red; }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+  <h1>Add Student</h1>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul>
+      {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+  <form method="post">
+    <label for="unique_id">Unique ID (e.g., 6576.2021):</label><br>
+    <input type="text" id="unique_id" name="unique_id"><br><br>
+
+    <label for="name">Name (e.g., Saning'o Totona):</label><br>
+    <input type="text" id="name" name="name"><br><br>
+
+    <label for="course">Course (e.g., Telecommunications and Information Technology):</label><br>
+    <input type="text" id="course" name="course"><br><br>
+
+    <input type="submit" value="Add Student">
+  </form>
+</body>
+</html>
